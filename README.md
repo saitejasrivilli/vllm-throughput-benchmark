@@ -6,12 +6,7 @@ Benchmarked LLM inference throughput using vLLM vs Hugging Face generation, focu
 
 ## High-Throughput LLM Inference Benchmarking with vLLM
 
-This project benchmarks large language model inference using vLLM and compares it against standard Hugging Face `generate()` under increasing concurrency.
-
-The goal is to understand how inference frameworks behave under realistic serving conditions, including concurrent requests, bursty traffic, and cost constraints.
-
-Rather than focusing on model quality, this project studies **inference scalability**, **latency tradeoffs**, and **cost efficiency**, which are often the limiting factors in production LLM systems.
-
+This project evaluates how different LLM inference pipelines behave under realistic serving conditions, including concurrent requests, queueing effects, and cost constraints, using vLLM and Hugging Face as comparison points.
 ---
 
 ## Environment
