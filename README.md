@@ -1,22 +1,43 @@
 # vllm-throughput-benchmark
-Benchmarked LLM inference throughput using vLLM vs Hugging Face generation, focusing on batching, KV cache behavior, and scalability under concurrent requests.
-# High-Throughput LLM Inference Benchmarking with vLLM
 
-This project benchmarks LLM inference throughput using vLLM and compares it against Hugging Face generation under concurrent load.
+Benchmarked LLM inference throughput using vLLM vs Hugging Face generation, focusing on batching behavior, KV cache efficiency, queueing effects, and cost under concurrent load.
 
-The goal is to understand how dynamic batching and KV cache management impact throughput, latency, and GPU utilization in real-world LLM serving scenarios.
+---
+
+## High-Throughput LLM Inference Benchmarking with vLLM
+
+This project benchmarks large language model inference using vLLM and compares it against standard Hugging Face `generate()` under increasing concurrency.
+
+The goal is to understand how inference frameworks behave under realistic serving conditions, including concurrent requests, bursty traffic, and cost constraints.
+
+Rather than focusing on model quality, this project studies **inference scalability**, **latency tradeoffs**, and **cost efficiency**, which are often the limiting factors in production LLM systems.
+
+---
 
 ## Environment
 
 - Platform: Google Colab (free tier)
 - GPU: NVIDIA T4 or L4
-- Frameworks: vLLM, Hugging Face Transformers
-- Model (initial): TinyLlama 1.1B Chat
+- Programming language: Python
+- Frameworks:
+  - vLLM
+  - Hugging Face Transformers
+- Model:
+  - TinyLlama 1.1B Chat (FP16 inference)
 
-## Current Status
+---
 
-- vLLM environment setup and sanity check completed
-- Deterministic generation configured for benchmarking
+## Benchmark Setup
+
+- Deterministic decoding (no sampling)
+- Fixed output length (128 tokens)
+- Identical prompts across all runs
+- Same model and precision for both frameworks
+- Throughput measured as tokens generated per second
+
+Batch size is used as a proxy for concurrent user requests.
+
+---
 
 ## Results
 
@@ -34,18 +55,77 @@ This benchmark compares Hugging Face `generate()` with vLLM under increasing con
 
 ![LLM inference throughput comparison](throughput_comparison.png)
 
-### Analysis
+---
 
-Hugging Face generation shows limited throughput scaling due to static batching and sequential request handling.  
-vLLM scales more effectively under concurrent load by dynamically batching token generation and efficiently managing the KV cache.
+### Throughput Analysis
 
-The largest gains appear at moderate to high concurrency, which better reflects real-world LLM serving scenarios.
+Hugging Face generation shows limited scaling as concurrency increases due to static batching and largely sequential request handling.
 
+vLLM scales more effectively under concurrent load by dynamically batching token generation and managing the KV cache efficiently. The largest gains appear at moderate to high concurrency, which better reflects real-world LLM serving scenarios.
+
+While vLLM provides limited benefit at very low concurrency, it significantly improves GPU utilization as request volume increases.
+
+---
+
+## Queueing Effects Under Staggered Arrivals
+
+To simulate real API traffic, requests were issued using a staggered arrival process rather than fixed batches. This models bursty user behavior and queueing effects commonly seen in production systems.
+
+Measured end-to-end latencies using vLLM:
+
+- P50 latency: ~48 ms  
+- P95 latency: ~88 ms  
+- P99 latency: ~115 ms  
+
+These results show that vLLM maintains low median latency while tail latency increases gradually under bursty load due to queueing and batching. This reflects an expected tradeoff in production systems where batching improves throughput at the cost of higher tail latency.
+
+---
+
+## Cost Implications
+
+Using measured throughput and an estimated GPU cost of $0.35 per hour (typical on-demand T4 pricing), cost per million tokens was calculated.
+
+- Hugging Face: ~$6.23 per million tokens  
+- vLLM: ~$1.74 per million tokens  
+
+This represents an approximate **3.6× reduction in cost per token** when using vLLM under concurrent load.
+
+These results highlight why optimized inference engines are critical for cost-effective LLM deployment at scale.
+
+---
 
 ## How to Run
 
-Open `vllm_throughput_benchmark.ipynb` in Google Colab, enable GPU runtime, and run all cells from top to bottom.
+1. Open `vllm_throughput_benchmark.ipynb` in Google Colab  
+2. Enable GPU runtime  
+3. Run all cells from top to bottom  
+
+All benchmarks are designed to run on free-tier Colab GPUs.
+
+---
+
+## Limitations and Tradeoffs
+
+- vLLM provides limited benefit at very low concurrency
+- Aggressive batching increases tail latency
+- GPU memory limits cap maximum batch size on free-tier hardware
+
+These constraints reflect real-world production tradeoffs rather than benchmark artifacts.
+
+---
 
 ## Motivation
 
-Most LLM performance issues in production come from inference pipelines rather than model quality. This project focuses on understanding and measuring inference behavior under realistic serving conditions.
+Most performance and cost issues in real LLM systems come from inference pipelines rather than model quality. This project focuses on understanding how batching, queueing, and KV cache behavior affect throughput, latency, and cost in realistic serving scenarios.
+
+---
+
+## Summary
+
+This project demonstrates:
+- Practical LLM inference benchmarking
+- Throughput and latency tradeoff analysis
+- Queueing behavior under bursty traffic
+- Cost-aware evaluation of inference frameworks
+
+The results show why vLLM is better suited than naive generation pipelines for scalable, production-grade LLM serving.
