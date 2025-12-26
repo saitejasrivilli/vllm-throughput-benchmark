@@ -18,11 +18,29 @@ The goal is to understand how dynamic batching and KV cache management impact th
 - vLLM environment setup and sanity check completed
 - Deterministic generation configured for benchmarking
 
-## Next Steps
+## Results
 
-- Implement Hugging Face baseline generation
-- Measure token throughput under varying concurrency
-- Compare throughput, latency, and memory usage
+This benchmark compares Hugging Face `generate()` with vLLM under increasing concurrent request load on a single GPU.
+
+### Throughput Comparison
+
+| Batch size | HF tokens/sec | vLLM tokens/sec | Speedup |
+|-----------|---------------|-----------------|---------|
+| 1 | 0.61 | 11.34 | 18.6× |
+| 2 | 3.68 | 16.71 | 4.5× |
+| 4 | 7.58 | 33.95 | 4.4× |
+| 8 | 15.59 | 55.89 | 3.6× |
+| 16 | 33.87 | 100.15 | 3.0× |
+
+![LLM inference throughput comparison](throughput_comparison.png)
+
+### Analysis
+
+Hugging Face generation shows limited throughput scaling due to static batching and sequential request handling.  
+vLLM scales more effectively under concurrent load by dynamically batching token generation and efficiently managing the KV cache.
+
+The largest gains appear at moderate to high concurrency, which better reflects real-world LLM serving scenarios.
+
 
 ## How to Run
 
